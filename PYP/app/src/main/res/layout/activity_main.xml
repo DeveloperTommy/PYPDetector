@@ -16,8 +16,17 @@
         android:layout_height="wrap_content"
         android:text="Attach"
         android:id="@+id/band_attach"
+        android:layout_marginTop="45dp"
         android:layout_below="@+id/feedback"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read Data"
+        android:id="@+id/read_button"
+        android:layout_below="@+id/band_attach"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="71dp" />
+        android:layout_marginTop="28dp" />
 
 </RelativeLayout>
