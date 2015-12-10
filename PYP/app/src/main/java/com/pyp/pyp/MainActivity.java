@@ -1,14 +1,15 @@
 package com.pyp.pyp;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.microsoft.band.BandClient;
 import com.microsoft.band.BandClientManager;
@@ -21,19 +22,29 @@ import com.microsoft.band.sensors.BandGsrEvent;
 import com.microsoft.band.sensors.BandGsrEventListener;
 import com.microsoft.band.sensors.BandHeartRateEvent;
 import com.microsoft.band.sensors.BandHeartRateEventListener;
+import com.microsoft.band.sensors.BandRRIntervalEvent;
+import com.microsoft.band.sensors.BandRRIntervalEventListener;
 import com.microsoft.band.sensors.HeartRateConsentListener;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+
+public class MainActivity extends Activity {
 
     BandInfo[] pairedBands;
     BandClient bandClient;
 
     TextView feedback;
-    Button attach, read_button;
+    Button attach, read_button, write_button;
 
     Boolean attached;
 
     BandPendingResult<ConnectionState> pendingResult;
+
+    ArrayList<Integer> gsrReadings, heartReadings;
+    ArrayList<Double> rrReadings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         feedback = (TextView) findViewById(R.id.feedback);
+
+        gsrReadings = new ArrayList<Integer>();
+        heartReadings = new ArrayList<Integer>();
+        rrReadings = new ArrayList<Double>();
 
         attached = false;
 
@@ -58,11 +73,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (attached) {
+
                     feedback.setText("Reading data..");
                     readData();
                 } else {
                     feedback.setText("Band not attached yet");
                 }
+            }
+        });
+
+        write_button = (Button) findViewById(R.id.write_button);
+        write_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {d
+                Log.d("Thing", "Writing to file");
+                writeFile();
             }
         });
     }
@@ -84,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
             public void onBandGsrChanged(BandGsrEvent bandGsrEvent) {
                 //feedback.setText("GSR: " + bandGsrEvent.getResistance());
                 Log.d("Thing", "GSR: " + bandGsrEvent.getResistance());
+                gsrReadings.add(bandGsrEvent.getResistance());
             }
+
         };
 
         final BandHeartRateEventListener heartRateListener = new BandHeartRateEventListener() {
@@ -92,8 +119,17 @@ public class MainActivity extends AppCompatActivity {
             public void onBandHeartRateChanged(BandHeartRateEvent bandHeartRateEvent) {
                 //feedback.setText("Heart Rate: " + bandHeartRateEvent.getHeartRate());
                 Log.d("Thing", "Heart Rate: " + bandHeartRateEvent.getHeartRate());
+                heartReadings.add(bandHeartRateEvent.getHeartRate());
             }
 
+        };
+
+        final BandRRIntervalEventListener rrListener = new BandRRIntervalEventListener() {
+            @Override
+            public void onBandRRIntervalChanged(BandRRIntervalEvent bandRRIntervalEvent) {
+                Log.d("Thing", "RR Interval: " + bandRRIntervalEvent.getInterval());
+                rrReadings.add(bandRRIntervalEvent.getInterval());
+            }
         };
 
         Log.d("Thing", "Checking consent");
@@ -111,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                     public void userAccepted(boolean b) {
                         startHeartRate(heartRateListener);
                         startGSR(gsrListener);
+                        startRR(rrListener);
                     }
                 });
             }
@@ -118,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Thing", "Consented");
                 startHeartRate(heartRateListener);
                 startGSR(gsrListener);
+                startRR(rrListener);
             }
 
 
@@ -147,6 +185,88 @@ public class MainActivity extends AppCompatActivity {
         catch (BandException e) {
             Log.d("Thing", "GSR band exception: " + e);
         }
+    }
+
+    public void startRR (BandRRIntervalEventListener listener) {
+        try {
+            bandClient.getSensorManager().registerRRIntervalEventListener(listener);
+        }
+        catch (BandException e) {
+            Log.d("Thing", "RR band exception: " + e);
+        }
+    }
+
+    public void writeFile() {
+        String filename = "myfile.txt";
+
+        File file = new File(this.getFilesDir(), filename);
+
+        String gsr = "GSR: \n";
+        String heart = "\n HEARTBEAT: \n";
+        String rr = "\n RR: \n";
+
+        for (int i = 0; i < gsrReadings.size(); i++) {
+            if (i == gsrReadings.size() - 1 ) {
+              gsr += gsrReadings.get(i);
+            }
+            else {
+              gsr += gsrReadings.get(i) + ",";
+            }
+        }
+
+        for (int i = 0; i < heartReadings.size(); i++) {
+            if (i == heartReadings.size() - 1 ) {
+                heart += heartReadings.get(i);
+            }
+            else {
+                heart += heartReadings.get(i) + ",";
+            }
+        }
+
+        for (int i = 0 ; i < rrReadings.size(); i ++) {
+            if (i == rrReadings.size() - 1 ) {
+                rr += rrReadings.get(i);
+            }
+            else {
+                rr += rrReadings.get(i) + ",";
+            }
+        }
+
+
+        try {
+
+            File myFile = new File("/sdcard/mysdfile.txt");
+            myFile.createNewFile();
+            FileOutputStream fOut = new FileOutputStream(myFile);
+            OutputStreamWriter myOutWriter =
+                    new OutputStreamWriter(fOut);
+            myOutWriter.append(gsr);
+            myOutWriter.append(heart);
+            myOutWriter.append(rr);
+            myOutWriter.close();
+            fOut.close();
+/*
+            FileOutputStream outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
+
+            OutputStreamWriter outputWriter=new OutputStreamWriter(outputStream);
+
+            outputWriter.write(gsr);
+            outputWriter.write(heart);
+            outputWriter.write(rr);
+
+            outputWriter.close();
+            outputStream.close();
+*/
+            Log.d("Thing", heart);
+            Log.d("Thing", this.getFilesDir().toString());
+
+            Toast.makeText(getBaseContext(), "File saved successfully!",
+                    Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 
@@ -200,6 +320,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
 
 
 }
