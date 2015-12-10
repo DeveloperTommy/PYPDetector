@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
         write_button = (Button) findViewById(R.id.write_button);
         write_button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {d
+            public void onClick(View v) {
                 Log.d("Thing", "Writing to file");
                 writeFile();
             }
