@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.RectF;
@@ -41,6 +42,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -59,6 +61,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
@@ -84,6 +87,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
@@ -235,6 +239,7 @@ public class Camera2VideoFragment extends Fragment
     private LineGraphSeries<DataPoint> series3;
     private int lastX = 0;
     private double lastHeartRate = 0;
+    private double lastRr  = 0;
     private int maxX = 25;
     private int maxXCount = 0;
 
@@ -375,6 +380,7 @@ public class Camera2VideoFragment extends Fragment
             public void onClick(View v) {
                 Log.d("Thing", "Writing to file");
                 writeFile();
+                takeScreenshot();
             }
         });
 
@@ -390,16 +396,24 @@ public class Camera2VideoFragment extends Fragment
         series1.setColor(Color.RED);
         series2 = new LineGraphSeries<DataPoint>();
         series2.setColor(Color.BLUE);
-        series3 = new LineGraphSeries<DataPoint>();
-        series3.setColor(Color.GREEN);
+        //series3 = new LineGraphSeries<DataPoint>();
+       // series3.setColor(Color.GREEN);
         graph.addSeries(series1);
         graph.addSeries(series2);
-        graph.addSeries(series3);
+        //graph.addSeries(series3);
+
+        // legend
+        series1.setTitle("Heart Rate");
+        series2.setTitle("RR Reading");
+        graph.getLegendRenderer().setVisible(true);
+        graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
+
+
         // customize a little bit viewport
         Viewport viewport = graph.getViewport();
         viewport.setYAxisBoundsManual(true);
         //viewport.setXAxisBoundsManual(true);
-        viewport.setMinY(0);
+        viewport.setMinY(25);
         viewport.setMaxY(100);
 //        viewport.setMinX(0);
   //      viewport.setMaxX(maxX);
@@ -466,6 +480,7 @@ public class Camera2VideoFragment extends Fragment
                 rr = "RR: " + bandRRIntervalEvent.getInterval();
 
                 readings.add(heart + gsr + rr);
+                lastRr = bandRRIntervalEvent.getInterval();
                 Log.d("Thing", "Reading: " + heart + gsr + rr);
             }
         };
@@ -699,15 +714,15 @@ public class Camera2VideoFragment extends Fragment
             maxXCount = 0;
         }*/
        if (heartReadings.size() != 0) {
-           series1.appendData(new DataPoint(lastX++, lastHeartRate), true, Integer.MAX_VALUE);
+           series1.appendData(new DataPoint(lastX++, lastHeartRate), true, 9999);
             /*series1.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d ), true, 10);
             series2.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);
             series3.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);*/
       }
-     /*  if (rrReadings.size() != 0){
-           series2.appendData(new DataPoint(lastX++, ), true, 10);
+        if (rrReadings.size() != 0){
+           series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 9999);
 
-       }*/
+       }
 /*
         if (gsrReadings.size() != 0) {
             series3.appendData(new DataPoint(lastX++, gsrReadings.get(gsrReadings.size() - 1)), true, 10);
@@ -1103,6 +1118,35 @@ public class Camera2VideoFragment extends Fragment
                     .create();
         }
 
+    }
+
+    //This method takes a screenshot of the device. Will be used to save graph data
+    private void takeScreenshot() {
+        Date now = new Date();
+        android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
+
+        try {
+            // image naming and path  to include sd card  appending name you choose for file
+            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + now + ".jpg";
+
+            // create bitmap screen capture
+            View v1 = getActivity().getWindow().getDecorView().getRootView();
+            v1.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+            v1.setDrawingCacheEnabled(false);
+
+            File imageFile = new File(mPath);
+
+            FileOutputStream outputStream = new FileOutputStream(imageFile);
+            int quality = 100;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
+            outputStream.flush();
+            outputStream.close();
+
+        } catch (Throwable e) {
+            // Several error may come out with file handling or OOM
+            e.printStackTrace();
+        }
     }
 
 }
