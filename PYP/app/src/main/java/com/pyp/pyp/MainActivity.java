@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
 
     ArrayList<Integer> gsrReadings, heartReadings;
     ArrayList<Double> rrReadings;
+    ArrayList<String> readings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +57,7 @@ public class MainActivity extends Activity {
         gsrReadings = new ArrayList<Integer>();
         heartReadings = new ArrayList<Integer>();
         rrReadings = new ArrayList<Double>();
+        readings = new ArrayList<String>();
 
         attached = false;
 
@@ -129,6 +131,27 @@ public class MainActivity extends Activity {
             public void onBandRRIntervalChanged(BandRRIntervalEvent bandRRIntervalEvent) {
                 Log.d("Thing", "RR Interval: " + bandRRIntervalEvent.getInterval());
                 rrReadings.add(bandRRIntervalEvent.getInterval());
+
+                String heart, gsr, rr;
+
+                if (heartReadings.size() == 0) {
+                    heart = "Heart: 0 | ";
+                }
+                else {
+                    heart = "Heart: " + heartReadings.get(heartReadings.size() - 1 ) + " | ";
+                }
+                if (gsrReadings.size() == 0) {
+                    gsr = "GSR: 0 | ";
+                }
+                else {
+                    gsr = "GSR: " + gsrReadings.get(gsrReadings.size() - 1) + " | ";
+                }
+
+                rr = "RR: " + bandRRIntervalEvent.getInterval();
+
+                readings.add(heart +  gsr + rr);
+                Log.d("Thing", "Reading: " + heart + gsr + rr);
+
             }
         };
 
@@ -205,6 +228,12 @@ public class MainActivity extends Activity {
         String heart = "\n HEARTBEAT: \n";
         String rr = "\n RR: \n";
 
+        String allReadings = "Readings: ";
+
+        for (int i = 0; i < readings.size(); i++) {
+            allReadings += "\n " + readings.get(i);
+        }
+
         for (int i = 0; i < gsrReadings.size(); i++) {
             if (i == gsrReadings.size() - 1 ) {
               gsr += gsrReadings.get(i);
@@ -243,6 +272,7 @@ public class MainActivity extends Activity {
             myOutWriter.append(gsr);
             myOutWriter.append(heart);
             myOutWriter.append(rr);
+            myOutWriter.append(allReadings);
             myOutWriter.close();
             fOut.close();
 /*
