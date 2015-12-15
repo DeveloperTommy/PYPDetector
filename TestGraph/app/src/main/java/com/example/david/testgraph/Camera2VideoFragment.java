@@ -116,6 +116,34 @@ public class Camera2VideoFragment extends Fragment
     ArrayList<Double> rrReadings;
     ArrayList<String> readings;
 
+    public static final int CALM = 0, ANXIOUS = 1, SCARED = 2, VERY_SCARED = 3, TERRIFIED = 4;
+
+    public int[] fears = {CALM, ANXIOUS, SCARED, VERY_SCARED, TERRIFIED};
+    public int fear = CALM;
+
+    private class Reading {
+        int heartRate, gsrRate;
+        double rrRate;
+
+        public Reading() {
+            heartRate = 0;
+            gsrRate = 0;
+            rrRate = 0;
+        }
+
+        public Reading(int heart, int gsr, double rr) {
+            heartRate = heart;
+            gsrRate = gsr;
+            rrRate = rr;
+        }
+    }
+
+    Reading[] fearBuffer;
+
+    boolean baselined = false;
+    double baselineHeart = 0, baselineGsr = 0, averageHeart, averageGsr;
+    int readingIdx = 0;
+
 
     /*
     END OF TOMMY STUFF
@@ -349,6 +377,8 @@ public class Camera2VideoFragment extends Fragment
         rrReadings = new ArrayList<Double>();
         readings = new ArrayList<String>();
 
+        fearBuffer = new Reading[10];
+
         attached = false;
 
         attach = (Button) activity.findViewById(R.id.band_attach);
@@ -440,6 +470,17 @@ public class Camera2VideoFragment extends Fragment
                 //feedback.setText("GSR: " + bandGsrEvent.getResistance());
                 Log.d("Thing", "GSR: " + bandGsrEvent.getResistance());
                 gsrReadings.add(bandGsrEvent.getResistance());
+
+                //We want to skip the first five values as usually those are noise from locking in heart rate
+                if (!baselined && gsrReadings.size() > 5) {
+                    fearBuffer[readingIdx] = new Reading(heartReadings.get(heartReadings.size() - 1),
+                                                            bandGsrEvent.getResistance(),
+                                                            rrReadings.get(rrReadings.size() - 1));
+                    if (readingIdx == 9) {
+                        baselined = true;
+                    }
+                    readingIdx = (readingIdx + 1) % fearBuffer.length;
+                }
             }
 
         };
@@ -464,20 +505,62 @@ public class Camera2VideoFragment extends Fragment
 
                 String heart, gsr, rr;
 
+                int hReading = 0, gReading = 0;
+                double rReading;
+
                 if (heartReadings.size() == 0) {
                     heart = "Heart: 0 | ";
                 }
                 else {
                     heart = "Heart: " + heartReadings.get(heartReadings.size() - 1 ) + " | ";
+                    hReading = heartReadings.get(heartReadings.size() - 1 );
                 }
                 if (gsrReadings.size() == 0) {
                     gsr = "GSR: 0 | ";
                 }
                 else {
                     gsr = "GSR: " + gsrReadings.get(gsrReadings.size() - 1) + " | ";
+                    gReading = gsrReadings.get(gsrReadings.size() - 1);
                 }
 
                 rr = "RR: " + bandRRIntervalEvent.getInterval();
+                rReading = bandRRIntervalEvent.getInterval();
+
+                /* Analyze Scare Data */
+
+                //Once heart rate settles, find baseline heart rate and gsr by taking the first five values' average post-noise for heart rate and gsr
+                if (baselined && baselineHeart == 0 && baselineGsr == 0) {
+                    for (int i = 0; i < fearBuffer.length/2; i++) {
+                        baselineHeart += fearBuffer[i].heartRate;
+                        baselineGsr += fearBuffer[i].gsrRate;
+                    }
+
+                    baselineHeart /= 5;
+                    baselineGsr /= 5;
+                }
+                else if (baselined && gReading != 0 && hReading != 0) {
+
+                    averageGsr = getGsrAverage();
+                    averageHeart = getHeartAverage();
+
+                    //After taking the buffer, we continue to average the buffer but perhaps we want to do it exponentially.
+                    fearBuffer[readingIdx] = new Reading(hReading, gReading, rReading);
+
+                    //Heart rate best indicates rising levels of fear
+
+                    //If the gsr is 10% less than the baseline, check for significant changes (such as a 10% drop of the current gsr). Heart rate won't change that much
+
+                    //Significant drops in gsr also can indicate jump scares or terror
+
+                    //If heart rate decreases and there is a slight increase in GSR, the person is calming
+
+                    readingIdx = (readingIdx + 1) % fearBuffer.length;
+
+                }
+
+
+
+                /* End of Analysis */
 
                 readings.add(heart + gsr + rr);
                 lastRr = bandRRIntervalEvent.getInterval();
@@ -520,6 +603,25 @@ public class Camera2VideoFragment extends Fragment
 //        }
 
     }
+
+    public double getGsrAverage() {
+        int sum = 0;
+        for (int i = 0; i < fearBuffer.length; i++) {
+            sum += fearBuffer[i].gsrRate;
+        }
+
+        return sum / fearBuffer.length;
+    }
+
+    public double getHeartAverage() {
+        int sum = 0;
+        for (int i = 0; i < fearBuffer.length; i++) {
+            sum += fearBuffer[i].heartRate;
+        }
+
+        return sum / fearBuffer.length;
+    }
+
 
     public void startHeartRate(BandHeartRateEventListener listener)  {
         try {
