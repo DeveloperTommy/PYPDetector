@@ -22,12 +22,13 @@
 
 
     <Button
+        android:background="@drawable/blue_button"
         android:id="@+id/video"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
         android:text="@string/record"
-        android:layout_below="@+id/texture"
+        android:layout_below="@+id/write_button"
         android:layout_centerHorizontal="true" />
 
     <!-- Tommy Stuff -->
@@ -38,6 +39,7 @@
         android:layout_centerHorizontal="true" />
 
     <Button
+        android:background="@drawable/blue_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
@@ -49,6 +51,7 @@
         android:layout_alignParentStart="true" />
 
     <Button
+        android:background="@drawable/blue_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
@@ -59,6 +62,7 @@
         android:layout_alignParentEnd="true" />
 
     <Button
+        android:background="@drawable/blue_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"

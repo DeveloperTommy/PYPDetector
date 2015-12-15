@@ -412,7 +412,7 @@ public class Camera2VideoFragment extends Fragment
         // customize a little bit viewport
         Viewport viewport = graph.getViewport();
         viewport.setYAxisBoundsManual(true);
-        //viewport.setXAxisBoundsManual(true);
+       // viewport.setXAxisBoundsManual(true);
         viewport.setMinY(25);
         viewport.setMaxY(100);
 //        viewport.setMinX(0);
