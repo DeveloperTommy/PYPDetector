@@ -234,6 +234,11 @@ public class Camera2VideoFragment extends Fragment
     private LineGraphSeries<DataPoint> series2;
     private LineGraphSeries<DataPoint> series3;
     private int lastX = 0;
+    private double lastHeartRate = 0;
+    private int maxX = 25;
+    private int maxXCount = 0;
+
+    private GraphView graph;
 
     private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
@@ -379,7 +384,7 @@ public class Camera2VideoFragment extends Fragment
         mButtonVideo = (Button) view.findViewById(R.id.video);
         mButtonVideo.setOnClickListener(this);
         // we get graph view instance
-        GraphView graph = (GraphView) view.findViewById(R.id.graph);
+        graph = (GraphView) view.findViewById(R.id.graph);
         // data
         series1 = new LineGraphSeries<DataPoint>();
         series1.setColor(Color.RED);
@@ -393,8 +398,11 @@ public class Camera2VideoFragment extends Fragment
         // customize a little bit viewport
         Viewport viewport = graph.getViewport();
         viewport.setYAxisBoundsManual(true);
+        //viewport.setXAxisBoundsManual(true);
         viewport.setMinY(0);
-        viewport.setMaxY(120);
+        viewport.setMaxY(100);
+//        viewport.setMinX(0);
+  //      viewport.setMaxX(maxX);
         viewport.setScrollable(true);
 
 
@@ -428,7 +436,9 @@ public class Camera2VideoFragment extends Fragment
                 //feedback.setText("Heart Rate: " + bandHeartRateEvent.getHeartRate());
                 Log.d("Thing", "Heart Rate: " + bandHeartRateEvent.getHeartRate());
                 heartReadings.add(bandHeartRateEvent.getHeartRate());
+                lastHeartRate = bandHeartRateEvent.getHeartRate();
             }
+
 
         };
 
@@ -682,14 +692,28 @@ public class Camera2VideoFragment extends Fragment
     // REPLACE RANDOM.nextdouble()* 10d with parameter value.
     private void addEntry() {
         // here, we choose to display max 10 points on the viewport and we scroll to end
-        if (heartReadings.size() != 0) {
-            series1.appendData(new DataPoint(lastX++, heartReadings.get(heartReadings.size() - 1)), true, 10);
-            //series2.appendData(new DataPoint(lastX++, rrReadings.get(rrReadings.size() - 1)), true, 10);
+     /*   maxXCount++;
+        if(maxXCount == 25){
+            maxX += 25;
+            graph.getViewport().setMaxX(maxX);
+            maxXCount = 0;
+        }*/
+       if (heartReadings.size() != 0) {
+           series1.appendData(new DataPoint(lastX++, lastHeartRate), true, Integer.MAX_VALUE);
+            /*series1.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d ), true, 10);
+            series2.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);
+            series3.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);*/
+      }
+     /*  if (rrReadings.size() != 0){
+           series2.appendData(new DataPoint(lastX++, ), true, 10);
 
-        }
+       }*/
+/*
         if (gsrReadings.size() != 0) {
             series3.appendData(new DataPoint(lastX++, gsrReadings.get(gsrReadings.size() - 1)), true, 10);
-        }
+        }*/
+
+
     }
 
     @Override
