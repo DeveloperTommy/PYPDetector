@@ -784,8 +784,8 @@ public class Camera2VideoFragment extends Fragment
 
             @Override
             public void run() {
-                // we add 100 new entries
-                for (int i = 0; i < 100; i++) {
+                // we add 99999 new entries
+                for (int i = 0; i < 99999; i++) {
                     if(getActivity() != null) {
                         getActivity().runOnUiThread(new Runnable() {
 
@@ -819,11 +819,11 @@ public class Camera2VideoFragment extends Fragment
     // Appends the data of heart rate and RR intervals to the graph. New data point added every time this method is called.
     private void addEntry() {
        if (heartReadings.size() != 0) {
-           series1.appendData(new DataPoint(lastX++, lastHeartRate), true, 9999);
+           series1.appendData(new DataPoint(lastX++, lastHeartRate), true, 99999);
       }
         //The RR readings are scaled to a multiple of 100.
         if (rrReadings.size() != 0){
-           series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 9999);
+           series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 99999);
 
        }
 
