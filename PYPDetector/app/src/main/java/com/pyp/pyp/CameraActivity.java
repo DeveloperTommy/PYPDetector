@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.david.pyp;
+package com.pyp.pyp;
 
 import android.app.Activity;
 import android.os.Bundle;
