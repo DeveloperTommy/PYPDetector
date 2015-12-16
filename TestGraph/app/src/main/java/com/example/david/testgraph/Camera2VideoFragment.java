@@ -142,7 +142,7 @@ public class Camera2VideoFragment extends Fragment
 
     boolean baselined = false;
     double baselineHeart = 0, baselineGsr = 0, averageHeart, averageGsr;
-    int readingIdx = 0;
+    int readingIdx = -1;
 
 
     /*
@@ -473,13 +473,16 @@ public class Camera2VideoFragment extends Fragment
 
                 //We want to skip the first five values as usually those are noise from locking in heart rate
                 if (!baselined && gsrReadings.size() > 5) {
+
+                    readingIdx = (readingIdx + 1) % fearBuffer.length;
+
                     fearBuffer[readingIdx] = new Reading(heartReadings.get(heartReadings.size() - 1),
                                                             bandGsrEvent.getResistance(),
                                                             rrReadings.get(rrReadings.size() - 1));
                     if (readingIdx == 9) {
                         baselined = true;
                     }
-                    readingIdx = (readingIdx + 1) % fearBuffer.length;
+
                 }
             }
 
@@ -544,9 +547,73 @@ public class Camera2VideoFragment extends Fragment
                     averageHeart = getHeartAverage();
 
                     //After taking the buffer, we continue to average the buffer but perhaps we want to do it exponentially.
+                    int prevIdx = readingIdx;
+                    readingIdx = (readingIdx + 1) % fearBuffer.length;
                     fearBuffer[readingIdx] = new Reading(hReading, gReading, rReading);
 
+                    if (hReading > baselineHeart + 40) {
+                        fear = TERRIFIED;
+                    }
+                    if (hReading > baselineHeart + 25) {
+                        fear = VERY_SCARED;
+                    }
+                    if (hReading > baselineHeart + 15) {
+                        fear = SCARED;
+                    }
+
+                    if (gReading < 0.7 * baselineGsr) {
+                        fear = ANXIOUS;
+                    }
+
+                    if (gReading < 0.6 * baselineGsr) {
+                        fear = SCARED;
+                    }
+
+                    if (gReading < 0.4 * baselineGsr) {
+                        fear = VERY_SCARED;
+                    }
+
                     //Heart rate best indicates rising levels of fear
+                    if (hReading - averageHeart > 3) {
+                        if (fear == CALM) {
+                            fear = ANXIOUS;
+                        }
+                        else if (fear == ANXIOUS) {
+                            fear = SCARED;
+                        }
+
+                        if (fearBuffer[prevIdx].gsrRate - gReading > fearBuffer[prevIdx].gsrRate * 0.5) {
+                            fear = TERRIFIED;
+                        }
+                        else if (fearBuffer[prevIdx].gsrRate - gReading > fearBuffer[prevIdx].gsrRate * 0.35) {
+                            if (fear != TERRIFIED) {
+                                fear++;
+                            }
+                        }
+                        else if (fearBuffer[prevIdx].gsrRate - gReading > fearBuffer[prevIdx].gsrRate * 0.1) {
+                            if (fear != VERY_SCARED) {
+                                fear++;
+                            }
+                        }
+
+                    }
+                    else if (hReading - averageHeart < -1) {
+
+                        if (baselineGsr * 0.5 > gReading) {
+                            if (fear != ANXIOUS) {
+                                fear--;
+                            }
+                        }
+                        else if (fear != CALM) {
+                            fear--;
+                        }
+                    }
+
+                    if (gReading < 0.2 * baselineGsr || ((fearBuffer[readingIdx].gsrRate - gReading) > 0.1 * fearBuffer[readingIdx].gsrRate)) {
+                        fear = TERRIFIED;
+                    }
+
+
 
                     //If the gsr is 10% less than the baseline, check for significant changes (such as a 10% drop of the current gsr). Heart rate won't change that much
 
@@ -554,9 +621,28 @@ public class Camera2VideoFragment extends Fragment
 
                     //If heart rate decreases and there is a slight increase in GSR, the person is calming
 
-                    readingIdx = (readingIdx + 1) % fearBuffer.length;
+                    //Fallback on comparing by average last
+
+
 
                 }
+
+                if (fear == CALM) {
+                    Log.d("Thing", "CALM");
+                }
+                else if (fear == ANXIOUS) {
+                    Log.d("Thing", "ANXIOUS");
+                }
+                else if (fear == SCARED) {
+                    Log.d("Thing", "SCARED");
+                }
+                else if (fear == VERY_SCARED) {
+                    Log.d("Thing", "VERY SCAERED");
+                }
+                else if (fear == TERRIFIED) {
+                    Log.d("Thing", "TERRIFIED");
+                }
+
 
 
 
