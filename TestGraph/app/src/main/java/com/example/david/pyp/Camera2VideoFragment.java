@@ -73,7 +73,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -153,28 +152,22 @@ public class Camera2VideoFragment extends Fragment
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    /**
-     * An {@link AutoFitTextureView} for camera preview.
-     */
-    private AutoFitTextureView mTextureView;
+     //An {@link AutoFitTextureView} for camera preview.
+     private AutoFitTextureView mTextureView;
 
-    /**
-     * Button to record video
-     */
+    //Button to record video
     private Button mButtonVideo;
 
-    /**
-     * A refernce to the opened {@link android.hardware.camera2.CameraDevice}.
-     */
+
+     //A refernce to the opened {@link android.hardware.camera2.CameraDevice}
     private CameraDevice mCameraDevice;
 
-    /**
-     * A reference to the current {@link android.hardware.camera2.CameraCaptureSession} for
-     * preview.
+     /* A reference to the current {@link android.hardware.camera2.CameraCaptureSession} for
+        preview.
      */
     private CameraCaptureSession mPreviewSession;
 
-    /**
+    /*
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
      * {@link TextureView}.
      */
@@ -214,53 +207,44 @@ public class Camera2VideoFragment extends Fragment
      */
     private Size mVideoSize;
 
-    /**
-     * Camera preview.
-     */
+    //Camera preview
     private CaptureRequest.Builder mPreviewBuilder;
 
-    /**
-     * MediaRecorder
-     */
+
+     // MediaRecorder
     private MediaRecorder mMediaRecorder;
 
-    /**
-     * Whether the app is recording video now
-     */
+
+     // Boolean to check whether the app is recording video now
     private boolean mIsRecordingVideo;
 
-    /**
-     * An additional thread for running tasks that shouldn't block the UI.
-     */
+
+     //An additional thread for running tasks that shouldn't block the UI.
     private HandlerThread mBackgroundThread;
 
-    /**
-     * A {@link Handler} for running tasks in the background.
-     */
+
+     //A {@link Handler} for running tasks in the background.
     private Handler mBackgroundHandler;
 
-    /**
-     * A {@link Semaphore} to prevent the app from exiting before closing the camera.
-     */
+
+     //A {@link Semaphore} to prevent the app from exiting before closing the camera.
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
-    /**
-     * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its status.
-     */
-    private static final Random RANDOM = new Random();
+
+
+
     private LineGraphSeries<DataPoint> series1;
     private LineGraphSeries<DataPoint> series2;
-    private LineGraphSeries<DataPoint> series3;
     private int lastX = 0;
     private double lastHeartRate = 0;
     private double lastRr  = 0;
-    private int maxX = 25;
-    private int maxXCount = 0;
 
     private GraphView graph;
 
+    //{@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its status.
     private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
+        //Camera starts preview once app is opened
         @Override
         public void onOpened(CameraDevice cameraDevice) {
             mCameraDevice = cameraDevice;
@@ -296,9 +280,7 @@ public class Camera2VideoFragment extends Fragment
     }
 
     /**
-     * In this sample, we choose a video size with 3x4 aspect ratio. Also, we don't use sizes
-     * larger than 1080p, since MediaRecorder cannot handle such a high-resolution video.
-     *
+     * Sets resolution and aspect ratio of video camera.
      * @param choices The list of available sizes
      * @return The video size
      */
@@ -313,9 +295,7 @@ public class Camera2VideoFragment extends Fragment
     }
 
     /**
-     * Given {@code choices} of {@code Size}s supported by a camera, chooses the smallest one whose
-     * width and height are at least as large as the respective requested values, and whose aspect
-     * ratio matches with the specified value.
+     * Optimal width and height of video camera.
      *
      * @param choices     The list of sizes that the camera supports for the intended output class
      * @param width       The minimum desired width
@@ -407,34 +387,30 @@ public class Camera2VideoFragment extends Fragment
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mButtonVideo = (Button) view.findViewById(R.id.video);
         mButtonVideo.setOnClickListener(this);
-        // we get graph view instance
+
+        // Set the graph view instance
         graph = (GraphView) view.findViewById(R.id.graph);
-        // data
+
+        //Declaration of series for graph
         series1 = new LineGraphSeries<DataPoint>();
         series1.setColor(Color.RED);
         series2 = new LineGraphSeries<DataPoint>();
         series2.setColor(Color.BLUE);
-        //series3 = new LineGraphSeries<DataPoint>();
-       // series3.setColor(Color.GREEN);
         graph.addSeries(series1);
         graph.addSeries(series2);
-        //graph.addSeries(series3);
 
-        // legend
+        // legend of series to be displayed on graph
         series1.setTitle("Heart Rate");
         series2.setTitle("RR Reading");
         graph.getLegendRenderer().setVisible(true);
         graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
 
 
-        // customize a little bit viewport
+        // viewport customization. Sets scale of the graph
         Viewport viewport = graph.getViewport();
         viewport.setYAxisBoundsManual(true);
-       // viewport.setXAxisBoundsManual(true);
         viewport.setMinY(25);
         viewport.setMaxY(100);
-//        viewport.setMinX(0);
-  //      viewport.setMaxX(maxX);
         viewport.setScrollable(true);
 
 
@@ -840,13 +816,12 @@ public class Camera2VideoFragment extends Fragment
 
     }
 
-    // This is the method that appends the data to graph series. Right now it doesn not take in a parameter,
-    // but it can take in the int values of data. The int values must be converted to doubles.
-    // REPLACE RANDOM.nextdouble()* 10d with parameter value.
+    // Appends the data of heart rate and RR intervals to the graph. New data point added every time this method is called.
     private void addEntry() {
        if (heartReadings.size() != 0) {
            series1.appendData(new DataPoint(lastX++, lastHeartRate), true, 9999);
       }
+        //The RR readings are scaled to a multiple of 100.
         if (rrReadings.size() != 0){
            series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 9999);
 
@@ -862,7 +837,7 @@ public class Camera2VideoFragment extends Fragment
         stopBackgroundThread();
         super.onPause();
     }
-
+    
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -1009,6 +984,7 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
+    //Method that closes the camera
     private void closeCamera() {
         try {
             mCameraOpenCloseLock.acquire();
@@ -1145,6 +1121,7 @@ public class Camera2VideoFragment extends Fragment
         mMediaRecorder.prepare();
     }
 
+    //Writes video file to device
     private File getVideoFile(Context context) {
         return new File(context.getExternalFilesDir(null), "video.mp4");
     }
@@ -1171,7 +1148,7 @@ public class Camera2VideoFragment extends Fragment
         mMediaRecorder.reset();
         Activity activity = getActivity();
         if (null != activity) {
-            Toast.makeText(activity, "Video saved: " + getVideoFile(activity),
+            Toast.makeText(activity, "Video saved: " + getVideoFile(activity), //Saves video file when recording ends
                     Toast.LENGTH_SHORT).show();
         }
         startPreview();
