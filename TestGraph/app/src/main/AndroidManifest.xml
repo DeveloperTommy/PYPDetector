@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.david.testgraph" >
+    package="com.example.david.pyp" >
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -19,7 +19,7 @@
 
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.david.com.pyp.pyp.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".CameraActivity"
+            android:name="com.example.david.com.pyp.pyp.CameraActivity"
             android:label="@string/title_activity_graph" >
         </activity>
     </application>

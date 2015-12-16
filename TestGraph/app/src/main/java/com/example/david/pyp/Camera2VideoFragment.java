@@ -1,20 +1,4 @@
-package com.example.david.testgraph;
-
-/*
- * Copyright 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com.example.david.pyp;
 
 import android.Manifest;
 import android.app.Activity;
@@ -97,11 +81,8 @@ import java.util.concurrent.TimeUnit;
 public class Camera2VideoFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
-    /*
-    TOMMY STUFF
 
-     */
-
+    /* Microsoft Band and Data Processing*/
     BandInfo[] pairedBands;
     BandClient bandClient;
 
@@ -112,17 +93,21 @@ public class Camera2VideoFragment extends Fragment
 
     BandPendingResult<ConnectionState> pendingResult;
 
+    //We are storing these readings for debugging and computing purposes
     ArrayList<Integer> gsrReadings, heartReadings;
     ArrayList<Double> rrReadings;
     ArrayList<String> readings;
 
+    /* Fear Level Handling */
     TextView fearLevel;
 
     public static final int CALM = 0, ANXIOUS = 1, SCARED = 2, VERY_SCARED = 3, TERRIFIED = 4;
 
     public String[] fears = {"CALM", "ANXIOUS", "SCARED", "VERY_SCARED", "TERRIFIED"};
     public int fear = CALM;
+    /* End of Fear Level Handling */
 
+    //We create a class for each reading to indicate a data point that we have. Each reading is based on each heartbeat from our RR Interval
     private class Reading {
         int heartRate, gsrRate;
         double rrRate;
@@ -140,16 +125,15 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
+    //This is our fear buffer where we continually add and replace into this buffer and compute baselines as well as averages.
     Reading[] fearBuffer;
 
     boolean baselined = false;
     double baselineHeart = 0, baselineGsr = 0, averageHeart, averageGsr;
     int readingIdx = -1;
 
+    /* End of Microsoft Band and Data Processing*/
 
-    /*
-    END OF TOMMY STUFF
-     */
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -371,7 +355,7 @@ public class Camera2VideoFragment extends Fragment
 
         Activity activity = getActivity();
 
-        //TOMMY STUFF
+        /* Microsoft Band + Data Analysis */
         feedback = (TextView) activity.findViewById(R.id.feedback);
 
         gsrReadings = new ArrayList<Integer>();
@@ -418,7 +402,7 @@ public class Camera2VideoFragment extends Fragment
             }
         });
 
-        //END OF TOMMY STUFF
+        /* End of Microsoft Band + Data Analysis */
 
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mButtonVideo = (Button) view.findViewById(R.id.video);
@@ -471,13 +455,12 @@ public class Camera2VideoFragment extends Fragment
         final BandGsrEventListener gsrListener = new BandGsrEventListener() {
             @Override
             public void onBandGsrChanged(BandGsrEvent bandGsrEvent) {
-                //feedback.setText("GSR: " + bandGsrEvent.getResistance());
                 Log.d("Thing", "GSR: " + bandGsrEvent.getResistance());
                 gsrReadings.add(bandGsrEvent.getResistance());
 
                 //We want to skip the first five values as usually those are noise from locking in heart rate
                 if (!baselined && gsrReadings.size() > 5) {
-
+                    //We set a baseline once we have 10 true GSR values which is approximately 75 seconds into the game (5 seconds per GSR reading)
                     readingIdx = (readingIdx + 1) % fearBuffer.length;
 
                     fearBuffer[readingIdx] = new Reading(heartReadings.get(heartReadings.size() - 1),
@@ -495,7 +478,7 @@ public class Camera2VideoFragment extends Fragment
         final BandHeartRateEventListener heartRateListener = new BandHeartRateEventListener() {
             @Override
             public void onBandHeartRateChanged(BandHeartRateEvent bandHeartRateEvent) {
-                //feedback.setText("Heart Rate: " + bandHeartRateEvent.getHeartRate());
+                //Add heart rate listeners and assign variables for future computing
                 Log.d("Thing", "Heart Rate: " + bandHeartRateEvent.getHeartRate());
                 heartReadings.add(bandHeartRateEvent.getHeartRate());
                 lastHeartRate = bandHeartRateEvent.getHeartRate();
@@ -530,6 +513,7 @@ public class Camera2VideoFragment extends Fragment
                     gReading = gsrReadings.get(gsrReadings.size() - 1);
                 }
 
+                //Data collected to be saved and logged
                 rr = "RR: " + bandRRIntervalEvent.getInterval();
                 rReading = bandRRIntervalEvent.getInterval();
 
@@ -547,14 +531,16 @@ public class Camera2VideoFragment extends Fragment
                 }
                 else if (baselined && gReading != 0 && hReading != 0) {
 
+                    //Compute averages for GSR and Heartrate after getting a baseline
                     averageGsr = getGsrAverage();
                     averageHeart = getHeartAverage();
 
-                    //After taking the buffer, we continue to average the buffer but perhaps we want to do it exponentially.
+                    //After taking the buffer, we continue to average the buffer to be used
                     int prevIdx = readingIdx;
                     readingIdx = (readingIdx + 1) % fearBuffer.length;
                     fearBuffer[readingIdx] = new Reading(hReading, gReading, rReading);
 
+                    //We want to check heartbeat first as that will tell us how scared they may be feeling
                     if (hReading > baselineHeart + 35) {
                         fear = TERRIFIED;
                     }
@@ -565,6 +551,7 @@ public class Camera2VideoFragment extends Fragment
                         fear = SCARED;
                     }
 
+                    //GSR is a more reliable trend to follow based on these values for fear/anxiety if heartbeat fails
                     if (gReading < 0.7 * baselineGsr) {
                         fear = ANXIOUS;
                     }
@@ -577,7 +564,7 @@ public class Camera2VideoFragment extends Fragment
                         fear = VERY_SCARED;
                     }
 
-                    //Heart rate best indicates rising levels of fear
+                    //Heart rate above average indicates rising fear
                     if (hReading - averageHeart > 2) {
                         if (fear == CALM) {
                             fear = ANXIOUS;
@@ -586,6 +573,7 @@ public class Camera2VideoFragment extends Fragment
                             fear = SCARED;
                         }
 
+                        //Checks for drops in GSR
                         if (fearBuffer[prevIdx].gsrRate - gReading > fearBuffer[prevIdx].gsrRate * 0.5) {
                             fear = TERRIFIED;
                         }
@@ -602,7 +590,7 @@ public class Camera2VideoFragment extends Fragment
 
                     }
                     else if (hReading - averageHeart < -1) {
-
+                        //If heart rate decreases and there is a slight increase in GSR, the person is calming
                         if (baselineGsr * 0.5 > gReading) {
                             if (fear != ANXIOUS) {
                                 fear--;
@@ -613,51 +601,16 @@ public class Camera2VideoFragment extends Fragment
                         }
                     }
 
+                    //JUMP SCARE DETECTION
+                    //If the gsr is 15% less than the baseline, check for significant changes (such as a 10% drop of the current gsr). Heart rate won't change that much
+                    //Significant drops in gsr also can indicate jump scares or terror
                     if (gReading < 0.15 * baselineGsr || ((fearBuffer[readingIdx].gsrRate - gReading) > 0.1 * fearBuffer[readingIdx].gsrRate)) {
                         fear = TERRIFIED;
                     }
 
-
-
-                    //If the gsr is 10% less than the baseline, check for significant changes (such as a 10% drop of the current gsr). Heart rate won't change that much
-
-                    //Significant drops in gsr also can indicate jump scares or terror
-
-                    //If heart rate decreases and there is a slight increase in GSR, the person is calming
-
-                    //Fallback on comparing by average last
-
-
-
                 }
-
-                /*
-
-                if (fear == CALM) {
-                    Log.d("Thing", "CALM");
-                }
-                else if (fear == ANXIOUS) {
-                    Log.d("Thing", "ANXIOUS");
-                }
-                else if (fear == SCARED) {
-                    Log.d("Thing", "SCARED");
-                }
-                else if (fear == VERY_SCARED) {
-                    Log.d("Thing", "VERY SCAERED");
-                }
-                else if (fear == TERRIFIED) {
-                    Log.d("Thing", "TERRIFIED");
-                }
-
-                */
 
                 Log.d("Thing", fears[fear]);
-                //
-
-
-
-
-
 
                 /* End of Analysis */
 
@@ -669,7 +622,6 @@ public class Camera2VideoFragment extends Fragment
 
         Log.d("Thing", "Checking consent");
 
-//        try {
         // register the listener
         if(bandClient.getSensorManager().getCurrentHeartRateConsent() !=
                 UserConsent.GRANTED) {
@@ -693,16 +645,9 @@ public class Camera2VideoFragment extends Fragment
             startRR(rrListener);
         }
 
-
-//            bandClient.getSensorManager().registerGsrEventListener(
-//                    gsrListener);
-//        } catch(BandException ex) {
-//        // handle BandException
-//            Log.d("Thing", "Band exception occured: " + ex);
-//        }
-
     }
 
+    //Iterate through our buffer to compute average
     public double getGsrAverage() {
         int sum = 0;
         for (int i = 0; i < fearBuffer.length; i++) {
@@ -712,6 +657,7 @@ public class Camera2VideoFragment extends Fragment
         return sum / fearBuffer.length;
     }
 
+    //Iterate through our buffer to compute average
     public double getHeartAverage() {
         int sum = 0;
         for (int i = 0; i < fearBuffer.length; i++) {
@@ -750,6 +696,7 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
+    //This is primarily used for our data collection for classifying and finding trends
     public void writeFile() {
 
         Activity activity = getActivity();
@@ -809,18 +756,7 @@ public class Camera2VideoFragment extends Fragment
             myOutWriter.append(allReadings);
             myOutWriter.close();
             fOut.close();
-/*
-            FileOutputStream outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
 
-            OutputStreamWriter outputWriter=new OutputStreamWriter(outputStream);
-
-            outputWriter.write(gsr);
-            outputWriter.write(heart);
-            outputWriter.write(rr);
-
-            outputWriter.close();
-            outputStream.close();
-*/
             Log.d("Thing", heart);
             Log.d("Thing", activity.getFilesDir().toString());
 
@@ -833,6 +769,7 @@ public class Camera2VideoFragment extends Fragment
 
     }
 
+    //Async Task required for connection to Microsoft Band 2
     private class ConnectBandTask extends AsyncTask<Void, Void, Void> {
         protected Void doInBackground(Void... nothing) {
             pendingResult = bandClient.connect();
@@ -907,31 +844,16 @@ public class Camera2VideoFragment extends Fragment
     // but it can take in the int values of data. The int values must be converted to doubles.
     // REPLACE RANDOM.nextdouble()* 10d with parameter value.
     private void addEntry() {
-        // here, we choose to display max 10 points on the viewport and we scroll to end
-     /*   maxXCount++;
-        if(maxXCount == 25){
-            maxX += 25;
-            graph.getViewport().setMaxX(maxX);
-            maxXCount = 0;
-        }*/
        if (heartReadings.size() != 0) {
            series1.appendData(new DataPoint(lastX++, lastHeartRate), true, 9999);
-            /*series1.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d ), true, 10);
-            series2.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);
-            series3.appendData(new DataPoint(lastX++, RANDOM.nextDouble() * 10d), true, 10);*/
       }
         if (rrReadings.size() != 0){
            series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 9999);
 
        }
 
+        //We place this here instead of on a listener because we don't want the listener to also run on the UI thread
         fearLevel.setText(fears[fear]);
-/*
-        if (gsrReadings.size() != 0) {
-            series3.appendData(new DataPoint(lastX++, gsrReadings.get(gsrReadings.size() - 1)), true, 10);
-        }*/
-
-
     }
 
     @Override
