@@ -71,5 +71,15 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Fear Level"
+        android:id="@+id/fear"
+        android:layout_above="@+id/band_attach"
+        android:layout_toStartOf="@+id/feedback"
+        android:textColor="#001fff" />
+
 
 </RelativeLayout>

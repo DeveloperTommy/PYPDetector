@@ -116,9 +116,11 @@ public class Camera2VideoFragment extends Fragment
     ArrayList<Double> rrReadings;
     ArrayList<String> readings;
 
+    TextView fearLevel;
+
     public static final int CALM = 0, ANXIOUS = 1, SCARED = 2, VERY_SCARED = 3, TERRIFIED = 4;
 
-    public int[] fears = {CALM, ANXIOUS, SCARED, VERY_SCARED, TERRIFIED};
+    public String[] fears = {"CALM", "ANXIOUS", "SCARED", "VERY_SCARED", "TERRIFIED"};
     public int fear = CALM;
 
     private class Reading {
@@ -379,6 +381,8 @@ public class Camera2VideoFragment extends Fragment
 
         fearBuffer = new Reading[10];
 
+        fearLevel = (TextView) activity.findViewById(R.id.fear);
+
         attached = false;
 
         attach = (Button) activity.findViewById(R.id.band_attach);
@@ -551,7 +555,7 @@ public class Camera2VideoFragment extends Fragment
                     readingIdx = (readingIdx + 1) % fearBuffer.length;
                     fearBuffer[readingIdx] = new Reading(hReading, gReading, rReading);
 
-                    if (hReading > baselineHeart + 40) {
+                    if (hReading > baselineHeart + 35) {
                         fear = TERRIFIED;
                     }
                     if (hReading > baselineHeart + 25) {
@@ -574,7 +578,7 @@ public class Camera2VideoFragment extends Fragment
                     }
 
                     //Heart rate best indicates rising levels of fear
-                    if (hReading - averageHeart > 3) {
+                    if (hReading - averageHeart > 2) {
                         if (fear == CALM) {
                             fear = ANXIOUS;
                         }
@@ -609,7 +613,7 @@ public class Camera2VideoFragment extends Fragment
                         }
                     }
 
-                    if (gReading < 0.2 * baselineGsr || ((fearBuffer[readingIdx].gsrRate - gReading) > 0.1 * fearBuffer[readingIdx].gsrRate)) {
+                    if (gReading < 0.15 * baselineGsr || ((fearBuffer[readingIdx].gsrRate - gReading) > 0.1 * fearBuffer[readingIdx].gsrRate)) {
                         fear = TERRIFIED;
                     }
 
@@ -627,6 +631,8 @@ public class Camera2VideoFragment extends Fragment
 
                 }
 
+                /*
+
                 if (fear == CALM) {
                     Log.d("Thing", "CALM");
                 }
@@ -642,6 +648,13 @@ public class Camera2VideoFragment extends Fragment
                 else if (fear == TERRIFIED) {
                     Log.d("Thing", "TERRIFIED");
                 }
+
+                */
+
+                Log.d("Thing", fears[fear]);
+                //
+
+
 
 
 
@@ -911,6 +924,8 @@ public class Camera2VideoFragment extends Fragment
            series2.appendData(new DataPoint(lastX++, lastRr * 100), true, 9999);
 
        }
+
+        fearLevel.setText(fears[fear]);
 /*
         if (gsrReadings.size() != 0) {
             series3.appendData(new DataPoint(lastX++, gsrReadings.get(gsrReadings.size() - 1)), true, 10);
