@@ -5,16 +5,16 @@
 Our goal is to detect stress levels while playing horror video games and classify between levels of fright and jump scares. The motivation behind this classification problem is to be able to see in real time how scared a person is feeling. This can be particularly useful for video game streamers who want to entertain their audience and give them insight to how that streamer is feeling while playing the video game.  
 
 ##Features
--Visualize heartbeat and RR readings (RR readings are magnified 100x for scale)
--State levels of fear in real time {calm, anxious, scared, very scared, terrified (equivalent to the level of a jump scare)}
--Record video of game and reactions
--Video saved to /data/com.example.david.pyp/files
--Record GSR, heart rate, and RR intervals
--Live graph of heart rate and RR intervals
---Screenshot of graph saved to /sdcard/’DATE mm-dd.jpg’
--Allows for logging of GSR, heart rate, and RR intervals
--Screenshots visualization and saves them to device when logging values
---Saved to /sdcard/mysdfile.txt
+- Visualize heartbeat and RR readings (RR readings are magnified 100x for scale)
+- State levels of fear in real time {calm, anxious, scared, very scared, terrified (equivalent to the level of a jump scare)}
+- Record video of game and reactions
+- Video saved to /data/com.example.david.pyp/files
+- Record GSR, heart rate, and RR intervals
+- Live graph of heart rate and RR intervals
+- - Screenshot of graph saved to /sdcard/’DATE mm-dd.jpg’
+- Allows for logging of GSR, heart rate, and RR intervals
+- Screenshots visualization and saves them to device when logging values
+- - Saved to /sdcard/mysdfile.txt
 
 ##Data Collection + Analysis
 We collected data in total of 7 males and 4 females. We labeled their data based on GSR, heart rate and RR intervals. Some of the things we found while collecting the data were:
